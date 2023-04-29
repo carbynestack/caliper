@@ -13,3 +13,5 @@ file in the Carbyne Stack
 
 - Trieflinger Sven
   [sven.trieflinger@de.bosch.com](mailto:sven.trieflinger@de.bosch.com)
+- Julian Grewe
+  [julian.grewe@de.bosch.com](mailto:julian.grewe@de.bosch.com)
