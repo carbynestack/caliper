@@ -7,17 +7,28 @@
 package org.gatling.plugin.carbynestack.util
 
 import io.carbynestack.amphora.common.{Tag, TagValueType}
-import scala.jdk.CollectionConverters._
 
-class TagGenerator(val tagKey: String, val tagValue: Long, val numberOfTags: Int) {
+import scala.jdk.CollectionConverters._
+import scala.util.Random
+
+class TagGenerator(
+  val tagKeys: List[String],
+  lowerBound: Option[Long] = null,
+  upperBound: Option[Long] = null,
+  stringLength: Option[Int] = null
+) {
 
   def generate: java.util.List[Tag] = {
-    (1 to numberOfTags).map { _ =>
+    tagKeys.map { tagKey =>
       Tag
         .builder()
         .key(tagKey)
-        .value(tagValue.toString)
-        .valueType(TagValueType.LONG)
+        .value(
+          if (!lowerBound.isEmpty && !upperBound.isEmpty)
+            (lowerBound.get + Random.nextLong(upperBound.get - lowerBound.get)).toString
+          else Random.alphanumeric.take(stringLength.get).mkString
+        )
+        .valueType(if (!lowerBound.isEmpty && !upperBound.isEmpty) TagValueType.LONG else TagValueType.STRING)
         .build()
     }.asJava
   }

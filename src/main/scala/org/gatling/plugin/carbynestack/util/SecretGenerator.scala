@@ -7,13 +7,23 @@
 package org.gatling.plugin.carbynestack.util
 
 import io.carbynestack.amphora.client.Secret
-import java.math.BigInteger
 
-class SecretGenerator(val tagGenerator: TagGenerator, val secret: Long, val numberOfSecrets: Int) {
+import java.math.BigInteger
+import scala.util.Random
+
+class SecretGenerator(
+  val tagGenerator: TagGenerator,
+  val lowerBound: Long,
+  val upperBound: Long,
+  val numberOfSecrets: Int
+) {
 
   def generate: Secret = {
     val tags = tagGenerator.generate
-    val secrets = Array.fill[BigInteger](numberOfSecrets)(new BigInteger(secret.toString))
+    val secrets =
+      Array.fill[BigInteger](numberOfSecrets)(
+        new BigInteger((lowerBound + Random.nextLong(upperBound - lowerBound)).toString)
+      )
     Secret.of(tags, secrets)
   }
 }
