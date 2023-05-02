@@ -7,19 +7,17 @@
 package org.gatling.plugin.carbynestack.request.builder
 
 import io.carbynestack.amphora.client.{AmphoraClient, Secret}
-import io.carbynestack.amphora.common.{Metadata, TagFilter}
 import io.carbynestack.amphora.common.paging.Sort
+import io.carbynestack.amphora.common.{Metadata, TagFilter}
 import io.gatling.commons.validation.{Failure, Success}
 import io.gatling.core.session.{Expression, Session}
 import org.gatling.plugin.carbynestack.action.CsActionBuilder
 import org.gatling.plugin.carbynestack.request.client.AmphoraProtocolBuilder
 
-import java.util.UUID
-
 class Amphora() {
 
-  def createSecret(secret: Expression[Secret]): CsActionBuilder[AmphoraClient, UUID] =
-    new CsActionBuilder[AmphoraClient, UUID](
+  def createSecret(secret: Expression[Secret]): CsActionBuilder[AmphoraClient, java.util.UUID] =
+    new CsActionBuilder[AmphoraClient, java.util.UUID](
       new AmphoraProtocolBuilder(),
       (client: AmphoraClient, session: Session) => {
         val secretValue = secret(session) match {

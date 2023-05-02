@@ -13,9 +13,9 @@ import scala.util.Random
 
 class TagGenerator(
   val tagKeys: List[String],
-  lowerBound: Option[Long] = null,
-  upperBound: Option[Long] = null,
-  stringLength: Option[Int] = null
+  val lowerBound: Option[Long],
+  val upperBound: Option[Long],
+  val stringLength: Option[Int]
 ) {
 
   def generate: java.util.List[Tag] = {
@@ -24,11 +24,11 @@ class TagGenerator(
         .builder()
         .key(tagKey)
         .value(
-          if (!lowerBound.isEmpty && !upperBound.isEmpty)
+          if (lowerBound.isDefined && upperBound.isDefined)
             (lowerBound.get + Random.nextLong(upperBound.get - lowerBound.get)).toString
           else Random.alphanumeric.take(stringLength.get).mkString
         )
-        .valueType(if (!lowerBound.isEmpty && !upperBound.isEmpty) TagValueType.LONG else TagValueType.STRING)
+        .valueType(if (lowerBound.isDefined && upperBound.isDefined) TagValueType.LONG else TagValueType.STRING)
         .build()
     }.asJava
   }
