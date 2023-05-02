@@ -4,11 +4,15 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+import io.carbynestack.amphora.common.{TagFilter, TagFilterOperator}
 import io.gatling.app.Gatling
 import io.gatling.core.Predef._
 import io.gatling.core.config.GatlingPropertiesBuilder
 import org.gatling.plugin.carbynestack.PreDef._
 import org.gatling.plugin.carbynestack.util.{SecretGenerator, TagGenerator}
+
+import scala.jdk.CollectionConverters._
+import scala.util.Random
 
 class CarbynestackSimulation extends Simulation {
 
@@ -18,16 +22,27 @@ class CarbynestackSimulation extends Simulation {
     .r("141515903391459779531506841503331516415")
     .invR("133854242216446749056083838363708373830")
 
-  val tagGenerator = new TagGenerator("sensorId", 1L, 1)
-  val secretGenerator = new SecretGenerator(tagGenerator, 999999L, 1)
+  val tagKeys = List.fill[String](2)(Random.alphanumeric.take(10).mkString)
+  val tagGenerator = new TagGenerator(tagKeys, 10)
+  val secretGenerator = new SecretGenerator(tagGenerator, 1000000000L, 9999999999L, 1)
 
-  val secret = secretGenerator.generate
+  val feeder = Iterator.continually {
+    Map("secret" -> secretGenerator.generate)
+  }
 
-  val scn = scenario("test-scenario")
-    .exec(amphora.createSecret(secret))
+  val createSecret = scenario("Amphora-createSecret-scenario")
+    .feed(feeder)
+    .exec(amphora.createSecret("#{secret}"))
+
+  val getSecrets = scenario("Amphora-getSecrets-scenario")
     .exec(amphora.getSecrets())
 
-  setUp(scn.inject(atOnceUsers(1)).protocols(csProtocol))
+  val filterCriteria
+    : java.util.List[TagFilter] = List(TagFilter.`with`("tagKey", "value", TagFilterOperator.EQUALS)).asJava
+  val getSecretsWithFilterCriteria = scenario("Amphora-getSecretsWithFilterCriteria-scenario")
+    .exec(amphora.getSecrets(filterCriteria))
+
+  setUp(createSecret.inject(atOnceUsers(1000)).protocols(csProtocol))
 }
 
 object Main {
