@@ -16,7 +16,7 @@ import org.gatling.plugin.carbynestack.request.client.ProtocolBuilder
 
 class CsAction[C, R](
   protocolBuilder: ProtocolBuilder[C],
-  function: (C, Session) => R,
+  requestFunction: (C, Session) => R,
   csComponents: CsComponents,
   coreComponents: CoreComponents,
   val next: Action
@@ -31,7 +31,7 @@ class CsAction[C, R](
     val start = coreComponents.clock.nowMillis
     try {
 
-      function(client, session)
+      requestFunction(client, session)
 
       coreComponents.statsEngine.logResponse(
         session.scenario,

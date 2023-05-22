@@ -23,7 +23,7 @@ class CarbynestackSimulation extends Simulation {
     .invR("133854242216446749056083838363708373830")
 
   val tagKeys = List.fill[String](2)(Random.alphanumeric.take(10).mkString)
-  val tagGenerator = new TagGenerator(tagKeys, 10)
+  val tagGenerator = new TagGenerator(tagKeys, Some(1000000000L), Some(9999999999L), null)
   val secretGenerator = new SecretGenerator(tagGenerator, 1000000000L, 9999999999L, 1)
 
   val feeder = Iterator.continually {
@@ -37,12 +37,7 @@ class CarbynestackSimulation extends Simulation {
   val getSecrets = scenario("Amphora-getSecrets-scenario")
     .exec(amphora.getSecrets())
 
-  val filterCriteria
-    : java.util.List[TagFilter] = List(TagFilter.`with`("tagKey", "value", TagFilterOperator.EQUALS)).asJava
-  val getSecretsWithFilterCriteria = scenario("Amphora-getSecretsWithFilterCriteria-scenario")
-    .exec(amphora.getSecrets(filterCriteria))
-
-  setUp(createSecret.inject(atOnceUsers(1000)).protocols(csProtocol))
+  setUp(getSecrets.inject(atOnceUsers(10)).protocols(csProtocol))
 }
 
 object Main {

@@ -13,12 +13,13 @@ import io.gatling.core.structure.ScenarioContext
 import org.gatling.plugin.carbynestack.protocol.CsProtocol
 import org.gatling.plugin.carbynestack.request.client.ProtocolBuilder
 
-class CsActionBuilder[C, R](protocolBuilder: ProtocolBuilder[C], function: (C, Session) => R) extends ActionBuilder {
+class CsActionBuilder[C, R](protocolBuilder: ProtocolBuilder[C], requestFunction: (C, Session) => R)
+    extends ActionBuilder {
 
   override def build(ctx: ScenarioContext, next: Action): Action = {
     val csComponents = ctx.protocolComponentsRegistry.components(CsProtocol.CsProtocolKey)
     val coreComponents = ctx.coreComponents
 
-    new CsAction(protocolBuilder, function, csComponents, coreComponents, next)
+    new CsAction(protocolBuilder, requestFunction, csComponents, coreComponents, next)
   }
 }
