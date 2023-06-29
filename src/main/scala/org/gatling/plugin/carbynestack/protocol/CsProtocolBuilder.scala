@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2023 - for information on the respective copyright owner
+ * see the NOTICE file and/or the repository https://github.com/carbynestack/caliper.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+package org.gatling.plugin.carbynestack.protocol
+
+import com.softwaremill.quicklens.ModifyPimp
+
+object CsProtocolBuilder {
+
+  implicit def csProtocolBuilder2CsProtocol(builder: CsProtocolBuilder): CsProtocol = builder.build
+
+  def apply(): CsProtocolBuilder = new CsProtocolBuilder(CsProtocol())
+}
+
+case class CsProtocolBuilder(protocol: CsProtocol) {
+
+  def endpoints(endpoints: List[String]): CsProtocolBuilder =
+    this.modify(_.protocol.endpoints).setTo(endpoints)
+
+  def prime(primeValue: String): CsProtocolBuilder = this.modify(_.protocol.prime).setTo(primeValue)
+
+  def r(rValue: String): CsProtocolBuilder = this.modify(_.protocol.r).setTo(rValue)
+
+  def invR(invRValue: String): CsProtocolBuilder = this.modify(_.protocol.invR).setTo(invRValue)
+
+  def build: CsProtocol = protocol
+}
