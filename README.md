@@ -22,14 +22,14 @@ Virtual Cloud using the dedicated java-clients.
 The `cs` object is used to provide a common configuration that is shared between
 all virtual users. A list of Amphora Service endpoint URIs and the SPDZ
 parameters matching the backend service configuration are used to initialize an
-amphora client.
+Amphora client.
 
 ### Action
 
 To test the performance of one or multiple backend services of a Carbyne Stack
 Virtual Cloud we create scenarios that make requests to a backend service. The
 `exec` method is used to execute an Action, in the context of this plugin,
-actions are requests performed by a client that will be send during a
+actions are requests performed by a client that will be sent during a
 simulation.
 
 ## Usage
@@ -79,14 +79,14 @@ class CarbynestackSimulation extends Simulation { //1
     .feed(feeder) //6
     .exec(amphora.createSecret("#{secret}")) //7
 
-  setUp( //10
-    createSecret.inject(atOnceUsers(10) //8
-    ).protocols(csProtocol)) //9
+  setUp( //8
+    createSecret.inject(atOnceUsers(10) //9
+    ).protocols(csProtocol)) //10
 }
 ```
 
 1. The class declaration, it needs to extend `Simulation`
-1. The common configuration to all Carbynestack-client requests, e.g. see
+1. The common configuration to all Carbynestack client requests, e.g. see
    [amphora-java-client](https://github.com/carbynestack/amphora/blob/master/amphora-java-client/README.md)
 1. Create a secret with randomized data that can be used by the client
 1. A
@@ -101,11 +101,11 @@ class CarbynestackSimulation extends Simulation { //1
    `io.carbynestack.amphora.client.AmphoraClient`. Using the
    [Gatling Expression Language](https://gatling.io/docs/gatling/reference/current/core/session/el/)
    we can use dynamic parameters that will be replaced with the value stored in
-   the virtual users session
+   the virtual user's session
 1. Setting up the scenario(s) we want to use in this simulation
 1. Declaring that 10 virtual users will be injected at once into the
-   `createSecret`-scenario
-1. Attaching the `cs`-configuration matching the backend service configuration
+   `createSecret` scenario
+1. Attaching the `cs` configuration matching the backend service configuration
 
 ## Namesake
 

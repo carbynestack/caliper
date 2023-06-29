@@ -14,6 +14,7 @@ object CsProtocolBuilder {
 
   def apply(): CsProtocolBuilder = new CsProtocolBuilder(CsProtocol())
 }
+
 case class CsProtocolBuilder(protocol: CsProtocol) {
 
   def endpoints(endpoints: List[String]): CsProtocolBuilder =
