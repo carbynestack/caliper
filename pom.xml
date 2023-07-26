@@ -2,7 +2,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.gatling-plugin</groupId>
     <artifactId>caliper</artifactId>
-    <version>0.1.1</version>
+    <version>0.1.2</version>
     <name>Carbynestack Gatling-Plugin</name>
     <description>A plugin for the gatling load-test-as-code tool</description>
     <licenses>
