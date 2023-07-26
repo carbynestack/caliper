@@ -5,16 +5,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 module.exports = {
-    extends: ["@commitlint/config-conventional"],
-    rules: {
-        "scope-empty": [
-            0,
-            "never"
-        ],
-        "scope-enum": [
-            2,
-            "always",
-            ["caliper"],
-        ],
-    },
+  extends: ["@commitlint/config-conventional"],
+  rules: {
+    "scope-empty": [0, "never"],
+    "scope-enum": [2, "always", ["caliper"]],
+  },
 };
