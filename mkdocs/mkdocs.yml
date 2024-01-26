@@ -1,0 +1,39 @@
+INHERIT: config/nav.yaml
+
+site_name: Caliper
+site_author: Carbyne Stack Community
+site_description: >-
+  Caliper Load-Tests Report
+copyright: "Copyright © 2021-2024 The Carbyne Stack Authors"
+
+repo_url: https://github.com/juliangrewe-bosch/caliper #TODO
+repo_name: caliper
+
+extra_css:
+  - stylesheets/extra.css
+
+theme:
+  name: material
+  language: en
+  features:
+    - announce.dismiss
+    - content.tabs.link
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.indexes
+    - navigation.top
+  logo: images/logo/carbynestack.svg
+  favicon: images/favicon.png
+  font:
+    text: lato
+    code: Roboto Mono
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: red
+
+extra:
+  version:
+    provider: mike

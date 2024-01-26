@@ -28,19 +28,23 @@ object CsProtocol extends StrictLogging {
     }
 
   def apply(
-    endpoints: List[String] = Nil,
+    amphoraEndpoints: List[String] = Nil,
+    ephemeralEndpoints: List[String] = Nil,
     prime: String = null,
     r: String = null,
     invR: String = null,
+    program: String = null
   ): CsProtocol =
-    new CsProtocol(endpoints, prime, r, invR)
+    new CsProtocol(amphoraEndpoints, ephemeralEndpoints, prime, r, invR, program)
 }
 
 case class CsProtocol(
-  endpoints: List[String],
+  amphoraEndpoints: List[String],
+  ephemeralEndpoints: List[String],
   prime: String,
   r: String,
   invR: String,
+  program: String
 ) extends Protocol {
   type Components = CsComponents
 }

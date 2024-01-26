@@ -1,0 +1,41 @@
+nav:
+  - Home: index.md
+  - Amphora:
+      - createSecret:
+          - createSecret_response_times: reports/amphora/createSecret/createSecret_response_times.md
+          - createSecret_1000: reports/amphora/createSecret/createSecret_1000.md
+          - createSecret_10000: reports/amphora/createSecret/createSecret_10000.md
+          - createSecret_50000: reports/amphora/createSecret/createSecret_50000.md
+          - createSecret_100000: reports/amphora/createSecret/createSecret_100000.md
+          - createSecret_250000: reports/amphora/createSecret/createSecret_250000.md
+          - createSecret_400000: reports/amphora/createSecret/createSecret_400000.md
+      - getSecrets:
+          - getSecret_response_times: reports/amphora/getSecrets/getSecret_response_times.md
+          - getSecret_1000: reports/amphora/getSecrets/getSecret_1000.md
+          - getSecret_11000: reports/amphora/getSecrets/getSecret_11000.md
+          - getSecret_61000: reports/amphora/getSecrets/getSecret_61000.md
+          - getSecret_161000: reports/amphora/getSecrets/getSecret_161000.md
+      - deleteSecret:
+          - deleteSecret_811000: reports/amphora/deleteSecret/deleteSecret_811000.md
+
+  - Castor:
+      - createSecret:
+          - createSecret_1000: reports/castor/createSecret/createSecret_1000.md
+          - createSecret_10000: reports/castor/createSecret/createSecret_10000.md
+          - createSecret_50000: reports/castor/createSecret/createSecret_50000.md
+          - createSecret_100000: reports/castor/createSecret/createSecret_100000.md
+          - createSecret_250000: reports/castor/createSecret/createSecret_250000.md
+          - createSecret_400000: reports/castor/createSecret/createSecret_400000.md
+      - getSecrets:
+          - getSecrets_1000: reports/castor/getSecrets/getSecret_1000.md
+          - getSecrets_11000: reports/castor/getSecrets/getSecret_11000.md
+          - getSecrets_61000: reports/castor/getSecrets/getSecret_61000.md
+          - getSecrets_161000: reports/castor/getSecrets/getSecret_161000.md
+      - deleteSecret:
+          - deleteSecret_811000: reports/castor/deleteSecret/deleteSecret_811000.md
+
+  - Ephemeral:
+      - emptyProgram:
+          - 400000_concurrency_10: reports/ephemeral/epmtyProgram/400000_concurrency_10.md
+      - scalarValueOptProgram:
+          - 400000_concurrency_10: reports/ephemeral/scalarValueOptProgram/400000_concurrency_10.md

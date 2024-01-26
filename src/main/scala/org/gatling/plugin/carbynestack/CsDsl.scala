@@ -7,11 +7,13 @@
 package org.gatling.plugin.carbynestack
 
 import org.gatling.plugin.carbynestack.protocol.CsProtocolBuilder
-import org.gatling.plugin.carbynestack.request.builder.Amphora
+import org.gatling.plugin.carbynestack.request.builder.{Amphora, Ephemeral}
 
 trait CsDsl {
 
   def cs: CsProtocolBuilder = CsProtocolBuilder()
 
   def amphora: Amphora = new Amphora()
+
+  def ephemeral: Ephemeral = new Ephemeral()
 }

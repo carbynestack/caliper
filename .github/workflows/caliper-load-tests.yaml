@@ -1,0 +1,170 @@
+name: 'Caliper-Load-Tests'
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: "Caliper"
+  cancel-in-progress: false
+
+jobs:
+  caliper:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: caliper
+
+      - uses: actions/checkout@v4
+        with:
+          repository: juliangrewe-bosch/carbynestack #TODO replace with carbynestack/carbynestack
+          token: ${{secrets.CALIPER_PRIVATE_REPOS_PAT}}
+          ref: cdktf-caliper #TODO main
+          path: carbynestack
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "16"
+
+      - uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_wrapper: false
+
+      - run: npm install --global cdktf-cli@0.16.3
+
+      - name: Provision AzureVM
+        id: provision-vm
+        run: |
+          npm install
+          cdktf get
+          cdktf synth
+          terraform -chdir=cdktf.out/stacks/private-aks/ init -input=false
+          terraform -chdir=cdktf.out/stacks/private-aks/ apply -auto-approve -input=false
+        working-directory: carbynestack/deployments
+        env:
+          TF_VAR_publicKey: ${{ secrets.CALIPER_PUBLIC_KEY }}
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Get AzureVM IP Address
+        id: get-ip
+        run: |
+          AZURE_VM_IP=$(terraform -chdir=cdktf.out/stacks/private-aks/ output -raw caliper-vm-public-ip)
+          echo "AZURE_VM_IP=$AZURE_VM_IP" >> $GITHUB_ENV
+          sleep 300 # sleep 5m until AzureVM provision is done, otherwise ssh might fail
+        working-directory: carbynestack/deployments
+
+      - name: Run Load-Tests
+        id: load-tests
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ env.AZURE_VM_IP }}
+          username: caliper
+          key: ${{ secrets.CALIPER_PRIVATE_KEY }}
+          command_timeout: 5h
+          script: |
+            export CALIPER_PRIVATE_REPOS_PAT=${{ secrets.CALIPER_PRIVATE_REPOS_PAT }}
+            export AZURE_CLIENT_ID=${{ secrets.AZURE_CLIENT_ID }}
+            export AZURE_CLIENT_SECRET=${{ secrets.AZURE_CLIENT_SECRET }}
+            export AZURE_T_ID=${{ secrets.AZURE_TENANT_ID }}
+            export AZURE_SUBSCRIPTION_ID=${{ secrets.AZURE_SUBSCRIPTION_ID }}
+            export CALIPER_PAT=${{ secrets.CALIPER_PAT }}
+            export GITHUB_USERNAME=juliangrewe-bosch
+            export PRIME=198766463529478683931867765928436695041
+            export R=141515903391459779531506841503331516415
+            export INVR=133854242216446749056083838363708373830
+            export PROGRAM=ephemeral-generic-default
+            export TUPLE_THRESHOLD=1000000 # klyshko config
+
+            export CASTOR_CHART="0.1-SNAPSHOT-2375669729-20-79c4e23"
+            export CASTOR_IMAGE="0.1-SNAPSHOT-2375669729-20-79c4e23"
+            export AMPHORA_CHART="0.1-SNAPSHOT-1576737535-6-7798b9e"
+            export AMPHORA_IMAGE="0.1-SNAPSHOT-1576737535-6-7798b9e"
+            export EPHEMERAL_CHART="0.1-SNAPSHOT-4243288527-23-5bd2cf6"
+            export EPHEMERAL_DISCOVERY="0.1-SNAPSHOT-4243288527-23-5bd2cf6"
+            export EPHEMERAL_IMAGE="0.1-SNAPSHOT-4243288527-23-5bd2cf6"
+            export EPHEMERAL_NET_CONTROLLER_IMAGE="0.1-SNAPSHOT-4243288527-23-5bd2cf6"
+            export KLYSHKO_CHART="0.2.0"
+            export KLYSHKO_CONTROLLER_IMAGE="0.2.0"
+            export KLYSHKO_PROVISIONER_IMAGE="0.1.0"
+
+            # temporary
+            git clone https://github.com/juliangrewe-bosch/caliper.git "$HOME/caliper"
+            git -C "$HOME/caliper" checkout -b caliper-workflow origin/caliper-workflow
+
+            #git clone https://github.com/carbynestack/caliper.git "$HOME/caliper"
+            #git clone https://github.com/carbynestack/carbynestack.git "$HOME/carbynestack"
+
+            chmod +x "$HOME/caliper/scripts/run_caliper_load_tests.sh"
+            mv "$HOME/caliper/scripts/run_caliper_load_tests.sh" "$HOME"
+            "$HOME/run_caliper_load_tests.sh"
+
+      - name: Zip Charts
+        id: zip-charts
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ env.AZURE_VM_IP }}
+          username: caliper
+          key: ${{ secrets.CALIPER_PRIVATE_KEY }}
+          script: |
+            cd "$HOME"/caliper/mkdocs/docs/images/ || exit 1
+            zip -r charts.zip charts/
+
+      - name: Copy Charts
+        id: copy-charts
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.CALIPER_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan ${{ env.AZURE_VM_IP }} >> ~/.ssh/known_hosts
+
+          scp caliper@${{ env.AZURE_VM_IP }}:/home/caliper/caliper/mkdocs/docs/images/charts.zip .
+          unzip charts.zip
+          cp -r $GITHUB_WORKSPACE/charts/ $GITHUB_WORKSPACE/caliper/mkdocs/docs/images/
+
+      - name: Deploy latest Report
+        id: deploy-report
+        run: |
+          export GITHUB_USERNAME=juliangrewe-bosch
+          export GITHUB_EMAIL=julian.grewe@de.bosch.com
+
+          pip install mkdocs-material >/dev/null
+          pip install mike >/dev/null
+
+          cd $GITHUB_WORKSPACE/caliper/mkdocs || exit 1
+
+          git config user.name $GITHUB_USERNAME
+          git config user.email $GITHUB_EMAIL
+
+          git fetch origin
+          git branch gh-pages origin/gh-pages
+
+          # mike list
+          # mike delete [identifier]
+          # keep only latest 10 entries
+          export DATE=$(date +"%d-%m-%Y")
+          mike deploy "$DATE" latest --push --update-aliases
+
+
+#  destroy:
+#    needs: caliper
+#    if: always()
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Azure Login
+#        uses: azure/login@v1
+#        with:
+#          creds: ${{ secrets.AZURE_CREDENTIALS }}
+#
+#      - name: Azure CLI script
+#        uses: azure/CLI@v1
+#        with:
+#          azcliversion: 2.30.0
+#          inlineScript: |
+#            az group delete --name caliper-rg --yes

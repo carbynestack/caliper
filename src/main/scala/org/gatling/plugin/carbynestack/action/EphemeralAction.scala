@@ -1,62 +1,63 @@
-/*
- * Copyright (c) 2023 - for information on the respective copyright owner
- * see the NOTICE file and/or the repository https://github.com/carbynestack/caliper.
- *
- * SPDX-License-Identifier: Apache-2.0
- */
 package org.gatling.plugin.carbynestack.action
 
+import io.carbynestack.ephemeral.client.{ActivationError, ActivationResult, EphemeralMultiClient}
 import io.gatling.commons.stats.{KO, OK}
 import io.gatling.core.CoreComponents
 import io.gatling.core.action.Action
 import io.gatling.core.session.Session
 import io.gatling.core.util.NameGen
-import org.gatling.plugin.carbynestack.protocol.CsComponents
-import org.gatling.plugin.carbynestack.request.client.ProtocolBuilder
+import io.vavr.concurrent.Future
 
-class CsAction[C, R](
-  protocolBuilder: ProtocolBuilder[C],
-  requestFunction: (C, Session) => R,
-  csComponents: CsComponents,
+import scala.util.control.NonFatal
+
+class EphemeralAction(
+  client: EphemeralMultiClient,
+  requestFunction: (EphemeralMultiClient, Session) => Future[
+    io.vavr.control.Either[ActivationError, java.util.List[ActivationResult]]
+  ],
   coreComponents: CoreComponents,
   val next: Action
 ) extends Action
     with NameGen {
 
-  override def name: String = genName("BaseRequest")
+  override def name: String = genName("EphemeralAction")
 
   override def execute(session: Session): Unit = {
 
-    val client = protocolBuilder.build(csComponents)
     val start = coreComponents.clock.nowMillis
     try {
 
-      requestFunction(client, session)
+      val response: Future[io.vavr.control.Either[ActivationError, java.util.List[ActivationResult]]] =
+        requestFunction(client, session)
+
+      response.await()
+      response.get().get()
 
       coreComponents.statsEngine.logResponse(
         session.scenario,
         session.groups,
-        session.scenario,
+        name,
         start,
         coreComponents.clock.nowMillis,
         OK,
         None,
         None
       )
+      next ! session
     } catch {
-      case e: Throwable =>
+      case NonFatal(e) =>
         logger.error(e.getMessage, e)
         coreComponents.statsEngine.logResponse(
           session.scenario,
           session.groups,
-          session.scenario,
+          name,
           start,
           coreComponents.clock.nowMillis,
           KO,
           Some("500"),
           Some(e.getMessage),
         )
+        next ! session.markAsFailed
     }
-    next ! session
   }
 }

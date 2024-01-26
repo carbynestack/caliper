@@ -1,0 +1,44 @@
+name: 'Test'
+
+on:
+  #push:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  caliper:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: caliper
+      - name: Copy Report Charts
+        id: copy-mkdocs
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.CALIPER_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan 13.69.143.73 >> ~/.ssh/known_hosts
+
+          scp caliper@13.69.143.73:/home/caliper/caliper/mkdocs/docs/images/charts.zip .
+          unzip charts.zip
+          cp -r $GITHUB_WORKSPACE/charts/ $GITHUB_WORKSPACE/caliper/mkdocs/docs/images/
+
+      - name: Deploy latest Report
+        id: deploy-report
+        run: |
+          pip install mkdocs-material
+          pip install mike
+
+          cd $GITHUB_WORKSPACE/caliper/mkdocs || exit 1
+
+          git config user.name juliangrewe-bosch
+          git config user.email julian.grewe@de.bosch.com
+
+          git fetch origin
+          git branch gh-pages origin/gh-pages
+
+          export DATE=$(date +"%d-%m-%Y")
+          mike deploy "$DATE" latest --push --update-aliases
