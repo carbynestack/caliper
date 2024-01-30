@@ -8,7 +8,7 @@ package org.gatling.plugin.carbynestack.request.client
 
 import org.gatling.plugin.carbynestack.protocol.CsComponents
 
-trait ProtocolBuilder[C] {
+trait ClientBuilder[C] {
 
   def build(csComponents: CsComponents): C
 }

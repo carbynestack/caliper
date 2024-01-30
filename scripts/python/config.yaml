@@ -1,0 +1,45 @@
+mkdocs:
+  charts:
+    amphora_simulation: 'caliper/mkdocs/docs/images/charts/amphorasimulation'
+    ephemeral_simulation: 'caliper/mkdocs/docs/images/charts/ephemeralsimulation'
+  report:
+    services: 'caliper/mkdocs/docs/report'
+    charts:
+      amphora_simulation: '../../../images/charts/amphorasimulation'
+      ephemeral_simulation: '../../../images/charts/ephemeralsimulation'
+
+simulation:
+  time_delta: 5
+  ok:
+    amphora: 'caliper{simulation="amphorasimulation",group=~"createSecret_.*|getSecret_.*|deleteSecret_.*", metric="percentiles99", scope="ok"}'
+    ephemeral: 'caliper{simulation="ephemeralsimulation",group=~"execute_.*", metric="percentiles99", scope="ok"}'
+  ko:
+    amphora: 'caliper{simulation="amphorasimulation",group=~"createSecret_.*|getSecret_.*|deleteSecret_.*", metric="percentiles99", scope="ko"}'
+    ephemeral: 'caliper{simulation="ephemeralsimulation",group=~"execute_.*", metric="percentiles99", scope="ko"}'
+  groups:
+    amphora:
+      createSecret: 'caliper{simulation="amphorasimulation", group=~"createSecret_.*", metric="percentiles99", scope="ok"}'
+      getSecret: 'caliper{simulation="amphorasimulation", group=~"getSecret_.*", metric="percentiles99", scope="ok"}'
+      deleteSecret: 'caliper{simulation="amphorasimulation", group=~"deleteSecret_.*", metric="percentiles99", scope="ok"}'
+    ephemeral:
+      execute: 'caliper{simulation="ephemeralsimulation", group=~"execute_.*", metric="percentiles99", scope="ok"}'
+
+cAdvisor:
+  node:
+    apollo: ''
+    starbuck: ''
+  container:
+    metric_names:
+      - 'container_memory_working_set_bytes'
+      - 'container_cpu_usage_seconds_total'
+      - 'container_fs_writes_bytes_total'
+      - 'container_fs_reads_bytes_total'
+      - 'container_network_receive_bytes_total'
+      - 'container_network_transmit_bytes_total'
+    metric_templates:
+      - 'container_memory_working_set_bytes{{container="{container}", pod=~"{pod}.*", service="kubelet"}}'
+      - 'irate(container_cpu_usage_seconds_total{{container="{container}", pod=~"{pod}.*", service="kubelet"}}[5m])'
+      - 'container_fs_writes_bytes_total{{container="{container}", pod=~"{pod}.*", service="kubelet"}}'
+      - 'container_fs_reads_bytes_total{{container="{container}", pod=~"{pod}.*", service="kubelet"}}'
+      - 'container_network_receive_bytes_total{{pod=~"{pod}.*", service="kubelet"}}'
+      - 'container_network_transmit_bytes_total{{pod=~"{pod}.*", service="kubelet"}}'
