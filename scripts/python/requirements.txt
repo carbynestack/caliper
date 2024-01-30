@@ -1,2 +1,3 @@
 matplotlib
+pyarrow
 prometheus_api_client

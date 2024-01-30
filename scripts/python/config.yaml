@@ -1,17 +1,21 @@
 mkdocs:
   charts:
-    amphora_simulation: "mkdocs/docs/images/charts/amphorasimulation"
-    ephemeral_simulation: "mkdocs/docs/images/charts/ephemeralsimulation"
-  report: "mkdocs/docs/report"
+    amphora_simulation: 'caliper/mkdocs/docs/images/charts/amphorasimulation'
+    ephemeral_simulation: 'caliper/mkdocs/docs/images/charts/ephemeralsimulation'
+  report:
+    services: 'caliper/mkdocs/docs/report'
+    charts:
+      amphora_simulation: '../../../images/charts/amphorasimulation'
+      ephemeral_simulation: '../../../images/charts/ephemeralsimulation'
 
 simulation:
   time_delta: 5
   ok:
-    amphora: 'caliper{simulation="amphorasimulation", metric="percentiles99", scope="ok"}'
-    ephemeral: 'caliper{simulation="ephemeralsimulation", metric="percentiles99", scope="ok"}'
+    amphora: 'caliper{simulation="amphorasimulation",group=~"createSecret_.*|getSecret_.*|deleteSecret_.*", metric="percentiles99", scope="ok"}'
+    ephemeral: 'caliper{simulation="ephemeralsimulation",group=~"execute_.*", metric="percentiles99", scope="ok"}'
   ko:
-    amphora: 'caliper{simulation="amphorasimulation", metric="percentiles99", scope="ko"}'
-    ephemeral: 'caliper{simulation="ephemeralsimulation", metric="percentiles99", scope="ko"}'
+    amphora: 'caliper{simulation="amphorasimulation",group=~"createSecret_.*|getSecret_.*|deleteSecret_.*", metric="percentiles99", scope="ko"}'
+    ephemeral: 'caliper{simulation="ephemeralsimulation",group=~"execute_.*", metric="percentiles99", scope="ko"}'
   groups:
     amphora:
       createSecret: 'caliper{simulation="amphorasimulation", group=~"createSecret_.*", metric="percentiles99", scope="ok"}'

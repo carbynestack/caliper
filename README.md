@@ -171,9 +171,11 @@ class CarbynestackSimulation extends Simulation { // 1
 
 ## Test Infrastructure
 
-To run the load-tests a *Carbyne Stack Virtual Cloud* has to be deployed. The
-\[LINK\] IaC repository is used to deploy a two-party VC hosted on *Microsoft
-Azure*. The following resources are created by running the IaC deployment:
+To run the load-tests a *Carbyne Stack Virtual Cloud* has to be deployed.
+Caliper uses
+[Infrastructure as Code](https://carbynestack.io/getting-started/deployment/infrastructure-as-code/)
+to deploy a two-party VC hosted on *Microsoft Azure*. The following resources
+are created by running the IaC deployment:
 
 - *PrivateAksStack*: Deploys an AzureVM that is later peered with the Carbyne
   Stack VC.
@@ -195,8 +197,8 @@ Azure*. The following resources are created by running the IaC deployment:
 
 *Caliper* creates a report that provides charts about resource consumption and
 response times of the deployed services. To visualize the data, the *Matplotlib*
-library is used in a python script located under `/scripts/generate_report.py`.
-The following data sources are used to create the report:
+library is used in python scripts located under `/scripts/python`. The following
+data sources are used to create the report:
 
 ### cAdvisor
 
@@ -234,24 +236,32 @@ specified:
     }
 ```
 
-### generate_report Script
+### Generate Charts
 
-Prometheus offers metrics in the format
-`<metric name>{<label name>=<label value>, ...}`, the *GraphiteExporter* sends
-the following metrics to the Prometheus Server:
-`caliper{simulation=value, group=value, metric=value, scope=value}`.
+Prometheus provides metrics in the format
+`<metric name>{<label name>=<label value>, ...}`, and the *GraphiteExporter*
+sends the following metrics to the Prometheus Server:
+`caliper{simulation=<SimulationClass>, group=<ScenarioGroup>,`
+`metric=<GatlingMetric>, scope=<OK|KO|ALL>}`.
 
-An example PromQL might look like this: caliper{simulation="amphorasimulation",
-group="secret_values_10000", metric="percentiles99", scope="ok"}.
+An example *Prometheus-PromQL* to retrieve all groups related to uploading
+secrets to the *Virtual Cloud* might look like this:
+`caliper{simulation="amphorasimulation", group=~"createSecret_.*",`
+`metric="percentiles99", scope="ok"}`.
 
-The *generate_report.py* script extracts the time range for each group and
-visualizes the time ranges per group in the cAdvisor charts.
+The Python scripts use these metrics to extract the start and end times for each
+group in order to slice the cAdvisor charts accordingly, and to extract response
+times for each group.
 
-Each chart is saved in the format
-`[Gatling group name]_[cAdvisor metric name].png` under
-`mkdocs/docs/images/[Simulation class]/[Chart name]`.
+To host the report on a *MkDocs* site, the Charts are stored under
+`mkdocs/docs/images/charts/{amphorasimulation|ephemeralsimulation}/{amphora|Castor|ephemeral}/{filename}.png`,
+where `filename` has the format
+`{amphora|castor|ephemeral}_{group}_{metric}.png`.
 
-### GitHub Actions Workflow
+The report files are stored under
+`mkdocs/docs/report/{service}/{request}/{group}.md`.
+
+## GitHub Actions Workflow
 
 A GitHub Actions Workflow `.github/workflows/caliper-load-tests.yaml` is used to
 automatically *deploy a two party VC*, run the specified *test-cases* and
@@ -259,47 +269,67 @@ finally deploy a new version of the *report*.
 
 - *Provision AzureVM*: Deploys an AzureVM.
 - *Run Load-Tests*: Connects to the deployed AzureVM via SSH and runs a
-  *setup-script* located under 'scripts/run_caliper_load_tests.sh'.
-- *Destroy*: Deletes the Azure resource group 'caliper-rg' to ensure that in
-  case steps fails, all deployed resources are destroyed.
+  *setup-script* located under `scripts/run_caliper_load_tests.sh`.
+- *Deploy latest Report*: pushes the latest report tagged with the current date
+  to the `gh-pages` branch.
+- *destroy*: Deletes the Azure resource group 'caliper-rg' to ensure that in
+  case steps fail, all deployed resources are destroyed.
+
+> **Important**: GitHub Pages needs to be enabled for the Caliper repository,
+> with the branch the site is build from being set to `gh-pages` from the
+> `/root` folder.
+
+To provide versioning, the [mike](http:/google.com) plugin is used. Each time
+the workflow is triggered, *Mike* uploads the latest report to the `gh-pages`
+branch.
 
 > **Important**: The following secrets must be available to run the GitHub
 > Actions Workflow:
 
-| Secret                  | Description                                                              | Expiration |
-| ----------------------- | ------------------------------------------------------------------------ | ---------- |
-| `AZURE_SUBSCRIPTION_ID` | Authenticate Terraform to Azure                                          | -          |
-| `AZURE_CLIENT_SECRET`   | Authenticate Terraform to Azure                                          | 2/27/2024  |
-| `AZURE_TENANT_ID`       | Authenticate Terraform to Azure                                          | -          |
-| `AZURE_CLIENT_ID`       | Authenticate Terraform to Azure                                          | -          |
-| `CALIPER_PAT`           | Caliper maven project uses this to download Clients from Github Packages | DATE       |
-| `CALIPER_PRIVATE_KEY`   | SSH keypair private key                                                  | -          |
-| `CALIPER_PUBLIC_KEY`    | SSH keypair public key                                                   | -          |
-| `AZURE_CREDENTIALS`     | Login to Azure with a Service Principal Secret                           | -          |
+| Secret                  | Description                                    | Expiration |
+| ----------------------- | ---------------------------------------------- | ---------- |
+| `AZURE_SUBSCRIPTION_ID` | Authenticate Terraform to Azure                | -          |
+| `AZURE_CLIENT_SECRET`   | Authenticate Terraform to Azure                | 2/27/2024  |
+| `AZURE_TENANT_ID`       | Authenticate Terraform to Azure                | -          |
+| `AZURE_CLIENT_ID`       | Authenticate Terraform to Azure                | -          |
+| `CALIPER_PAT`           | Authenticate to Carbyne Stack Github Packages  | DATE       |
+| `CALIPER_PRIVATE_KEY`   | SSH keypair private key                        | -          |
+| `CALIPER_PUBLIC_KEY`    | SSH keypair public key                         | -          |
+| `AZURE_CREDENTIALS`     | Login to Azure with a Service Principal Secret | -          |
 
-Caliper uses *MkDocs* to host the report via GitHub pages. To provide
-versioning, the [mike](http:/google.com) plugin is implemented. Each time the
-*generate_report.py* script creates new charts, *Mike* uploads the updated
-report to the `gh-pages` branch in a new directory labeled with the current
-date.
+> **NOTE**: See
+> [Azure login](https://github.com/Azure/login?tab=readme-ov-file#login-with-a-service-principal-secret)
+> for the AZURE_CREDENTIALS value.
 
-### Add/ Remove Test-cases
+The value for AZURE_CREDENTIALS has the format:
 
-To add or remove test-cases the following steps must be peformed:
+```json
+{
+    "clientSecret":  "******",
+    "subscriptionId":  "******",
+    "tenantId":  "******",
+    "clientId":  "******"
+}
+```
 
-A Simulation class contains multiple scenario(s),
+> **NOTE**: See [Setting up a SSH Key](https://github.com/appleboy/ssh-action)
+> for creating the SSH Keys.
 
-- Define scenario(s) which contain(s) group(s): The scenario name is not
-  relevant and only used for logical separation. A *group* combines one or
-  multiple requests for which the *response times* and *cAdvisor charts* are
-  created.
-- The *generate_x\_.py* scripts automatically create for each *group* the
-  corresponding charts.
-- Naming convention for groups: `{request_name}_{test_objective}`, e.g.
-  createSecret_10000
-- After a run of caliper the python scripts located under `/scripts` will
-  generate the cAdvisor and gatling respones times charts, as well as the
-  markdown files for the report.
+## Add/ Remove Test-cases
+
+To add test-cases, the following steps must be performed:
+
+A *Simulation class* contains multiple *scenarios*,
+
+1. Define a scenario which contains one or multiple *groups*: The scenario name
+   is not relevant and only used for logical separation. A group combines one or
+   multiple requests for which the *response times* and *cAdvisor charts* are
+   generated.
+1. The groups are named using the format `{request}_{test_objective}`, e.g. a
+   group containing tests for uploading secrets with 1000 secret-values might be
+   named `createSecret_1000`.
+1. Add a test description to `mkdocs/docs/index.md` and update
+   `mkdocs/config/nav.yaml` to include the test-cases.
 
 ## Namesake
 

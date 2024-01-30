@@ -26,11 +26,11 @@ jobs:
           ref: cdktf-caliper #TODO main
           path: carbynestack
 
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
-          node-version: "16"
+          node-version: 18
 
-      - uses: hashicorp/setup-terraform@v2
+      - uses: hashicorp/setup-terraform@v3
         with:
           terraform_wrapper: false
 
@@ -86,10 +86,10 @@ jobs:
             export CASTOR_IMAGE="0.1-SNAPSHOT-2375669729-20-79c4e23"
             export AMPHORA_CHART="0.1-SNAPSHOT-1576737535-6-7798b9e"
             export AMPHORA_IMAGE="0.1-SNAPSHOT-1576737535-6-7798b9e"
-            export EPHEMERAL_CHART="0.1-SNAPSHOT-4243288527-23-5bd2cf6"
-            export EPHEMERAL_DISCOVERY="0.1-SNAPSHOT-4243288527-23-5bd2cf6"
-            export EPHEMERAL_IMAGE="0.1-SNAPSHOT-4243288527-23-5bd2cf6"
-            export EPHEMERAL_NET_CONTROLLER_IMAGE="0.1-SNAPSHOT-4243288527-23-5bd2cf6"
+            export EPHEMERAL_CHART="0.1-SNAPSHOT-4404775200-24-30ce5fa"
+            export EPHEMERAL_DISCOVERY="0.1-SNAPSHOT-4404775200-24-30ce5fa"
+            export EPHEMERAL_IMAGE="0.1-SNAPSHOT-4404775200-24-30ce5fa"
+            export EPHEMERAL_NET_CONTROLLER_IMAGE="0.1-SNAPSHOT-4404775200-24-30ce5fa"
             export KLYSHKO_CHART="0.2.0"
             export KLYSHKO_CONTROLLER_IMAGE="0.2.0"
             export KLYSHKO_PROVISIONER_IMAGE="0.1.0"
@@ -105,28 +105,28 @@ jobs:
             mv "$HOME/caliper/scripts/run_caliper_load_tests.sh" "$HOME"
             "$HOME/run_caliper_load_tests.sh"
 
-      - name: Zip Charts
-        id: zip-charts
+      - name: Zip Docs
+        id: zip-docs
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ env.AZURE_VM_IP }}
           username: caliper
           key: ${{ secrets.CALIPER_PRIVATE_KEY }}
           script: |
-            cd "$HOME"/caliper/mkdocs/docs/images/ || exit 1
-            zip -r charts.zip charts/
+            cd "$HOME"/caliper/mkdocs/ || exit 1
+            zip -r docs.zip docs/
 
-      - name: Copy Charts
-        id: copy-charts
+      - name: Copy Docs
+        id: copy-docs
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.CALIPER_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan ${{ env.AZURE_VM_IP }} >> ~/.ssh/known_hosts
 
-          scp caliper@${{ env.AZURE_VM_IP }}:/home/caliper/caliper/mkdocs/docs/images/charts.zip .
-          unzip charts.zip
-          cp -r $GITHUB_WORKSPACE/charts/ $GITHUB_WORKSPACE/caliper/mkdocs/docs/images/
+          scp caliper@${{ env.AZURE_VM_IP }}:/home/caliper/caliper/mkdocs/docs.zip .
+          unzip docs.zip
+          cp -r $GITHUB_WORKSPACE/docs/ $GITHUB_WORKSPACE/caliper/mkdocs/
 
       - name: Deploy latest Report
         id: deploy-report
@@ -145,26 +145,23 @@ jobs:
           git fetch origin
           git branch gh-pages origin/gh-pages
 
-          # mike list
-          # mike delete [identifier]
-          # keep only latest 10 entries
           export DATE=$(date +"%d-%m-%Y")
           mike deploy "$DATE" latest --push --update-aliases
 
 
-#  destroy:
-#    needs: caliper
-#    if: always()
-#    runs-on: ubuntu-latest
-#    steps:
-#      - name: Azure Login
-#        uses: azure/login@v1
-#        with:
-#          creds: ${{ secrets.AZURE_CREDENTIALS }}
-#
-#      - name: Azure CLI script
-#        uses: azure/CLI@v1
-#        with:
-#          azcliversion: 2.30.0
-#          inlineScript: |
-#            az group delete --name caliper-rg --yes
+  destroy:
+    needs: caliper
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Azure CLI script
+        uses: azure/CLI@v1
+        with:
+          azcliversion: 2.30.0
+          inlineScript: |
+            az group delete --name caliper-rg --yes

@@ -92,12 +92,14 @@ chmod +x mvnw
 ./mvnw -q gatling:test
 
 # Generate cAdvisor and gatling charts
+cd "$HOME"/caliper/scripts/python || exit 1
+
 export PROMETHEUS_SERVER_PORT=32767
 export APOLLO_NODE_IP=$(kubectl get node -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')
 kubectl config use-context starbuck-private
 export STARBUCK_NODE_IP=$(kubectl get node -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')
 
-pip3 install -r scripts/python/requirements.txt >/dev/null
-python3 scripts/python/generate_gatling_charts.py
-python3 scripts/python/generate_cAdvisor_charts.py
-python3 scripts/python/generate_report_files.py
+pip3 install -r requirements.txt >/dev/null
+python3 generate_cAdvisor_charts.py
+python3 generate_gatling_response_times_files.py
+python3 generate_cAdvisor_report_files.py

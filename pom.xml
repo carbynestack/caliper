@@ -109,7 +109,7 @@
                                 <arg>${project.build.directory}/.scala_dependencies</arg>
                             </args>
                             <jvmArgs>
-                                <jvmArg>-Xmx7g</jvmArg>
+                                <jvmArg>-Xmx10g</jvmArg>
                             </jvmArgs>
                         </configuration>
                     </execution>
